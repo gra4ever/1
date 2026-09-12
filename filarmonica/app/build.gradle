@@ -28,3 +28,14 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 }
+
+// Keep the source readable while fixing the one Java-regex escape before javac.
+tasks.withType(JavaCompile).configureEach {
+    doFirst {
+        def f = file('src/main/java/ro/filarmonica/transilvania/stagiune/FinalMainActivity.java')
+        if (f.exists()) {
+            def fixed = f.getText('UTF-8').replace('[:\\-–]', '[:–-]')
+            f.write(fixed, 'UTF-8')
+        }
+    }
+}

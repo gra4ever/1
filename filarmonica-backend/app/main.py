@@ -22,7 +22,8 @@ from .snapshot import (
     utc_now_iso,
 )
 
-app = FastAPI(title="Stagiune Filarmonica Transilvania API", version="0.2.0")
+VERSION = "0.3.0"
+app = FastAPI(title="Stagiune Filarmonica Transilvania API", version=VERSION)
 DOC_ID = os.getenv("GOOGLE_DOC_ID", "101B96OK81QjVMb_dzNQwHaCIwLA2hzA0vUBD31ldW74")
 CREDS_PATH = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "/secrets/google.json")
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
@@ -65,14 +66,34 @@ def fetch_raw_program():
     return {"title": doc.get("title"), "tables": result}
 
 
+def sanitize_for_app(value):
+    """Android's org.json renders JSON null as the literal text 'null'.
+    The UI never needs that text, so return empty strings for nullable leaf values.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, dict):
+        return {k: sanitize_for_app(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [sanitize_for_app(v) for v in value]
+    return value
+
+
+def public_event_type(value):
+    # Keep compatibility with the current APK: the recital tab expects type "tmc".
+    return "tmc" if value == "recital" else value
+
+
 def refresh_snapshot(source="automatic"):
     now = utc_now_iso()
     try:
         raw = fetch_raw_program()
         new_program = parse_program(raw)
         old_program = load_snapshot()
-        changes = diff_program(old_program, new_program)
-        if old_program is None:
+        previous_status = load_status()
+        is_version_upgrade = bool(old_program) and previous_status.get("version") != VERSION
+
+        if old_program is None or is_version_upgrade:
             save_snapshot(new_program)
             save_status({
                 "ok": True,
@@ -80,9 +101,12 @@ def refresh_snapshot(source="automatic"):
                 "last_change_count": 0,
                 "baseline_created": True,
                 "source": source,
-                "version": "0.2.0",
+                "version": VERSION,
+                "migration_rebaseline": is_version_upgrade,
             })
             return {"ok": True, "baseline_created": True, "change_count": 0, "program": new_program}
+
+        changes = diff_program(old_program, new_program)
         if changes:
             entries = aggregate_news(changes, detected_at=now, source=source)
             save_news(entries + load_news())
@@ -93,7 +117,7 @@ def refresh_snapshot(source="automatic"):
             "last_change_count": len(changes),
             "baseline_created": False,
             "source": source,
-            "version": "0.2.0",
+            "version": VERSION,
         })
         return {
             "ok": True,
@@ -103,7 +127,7 @@ def refresh_snapshot(source="automatic"):
             "program": new_program,
         }
     except Exception as e:
-        save_status({"ok": False, "last_scan": now, "error": str(e), "source": source, "version": "0.2.0"})
+        save_status({"ok": False, "last_scan": now, "error": str(e), "source": source, "version": VERSION})
         raise
 
 
@@ -139,7 +163,7 @@ def root():
     return {
         "app": "Stagiune Filarmonica Transilvania",
         "status": "running",
-        "version": "0.2.0",
+        "version": VERSION,
         "endpoints": [
             "/health", "/doc-info", "/raw-program", "/api/program", "/api/program/live",
             "/api/refresh", "/api/news", "/api/status", "/api/search?q=Mahler",
@@ -149,7 +173,7 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "version": "0.2.0", "scheduler": "09:00 Europe/Bucharest"}
+    return {"ok": True, "version": VERSION, "scheduler": "09:00 Europe/Bucharest"}
 
 
 @app.get("/doc-info")
@@ -196,18 +220,18 @@ def raw_program():
 @app.get("/api/program")
 def api_program():
     snap = load_snapshot()
-    if snap is not None:
-        return snap
-    try:
-        return refresh_snapshot(source="baseline")["program"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if snap is None:
+        try:
+            snap = refresh_snapshot(source="baseline")["program"]
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+    return sanitize_for_app(snap)
 
 
 @app.get("/api/program/live")
 def api_program_live():
     try:
-        return parse_program(fetch_raw_program())
+        return sanitize_for_app(parse_program(fetch_raw_program()))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -217,12 +241,12 @@ def api_program_live():
 def api_refresh():
     try:
         result = refresh_snapshot(source="manual")
-        return {
+        return sanitize_for_app({
             "ok": result["ok"],
             "baseline_created": result.get("baseline_created", False),
             "change_count": result.get("change_count", 0),
             "changes": result.get("changes", []),
-        }
+        })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -230,12 +254,12 @@ def api_refresh():
 @app.get("/api/news")
 def api_news(limit: int = Query(100, ge=1, le=1000)):
     news = load_news()
-    return {"count": min(len(news), limit), "items": news[:limit]}
+    return sanitize_for_app({"count": min(len(news), limit), "items": news[:limit]})
 
 
 @app.get("/api/status")
 def api_status():
-    return {**load_status(), "scheduler_time": "09:00", "timezone": TZ_NAME}
+    return sanitize_for_app({**load_status(), "scheduler_time": "09:00", "timezone": TZ_NAME})
 
 
 @app.get("/api/search")
@@ -262,7 +286,7 @@ def api_search(q: str = Query(..., min_length=1), limit: int = Query(50, ge=1, l
                     work_hits.append({"composer": w.get("composer"), "title": w.get("title")})
             results.append({
                 "event_id": e.get("id"),
-                "type": e.get("type"),
+                "type": public_event_type(e.get("type")),
                 "date_label": e.get("raw", {}).get("date", ""),
                 "month": month.get("month"),
                 "month_name": month.get("name"),
@@ -273,5 +297,5 @@ def api_search(q: str = Query(..., min_length=1), limit: int = Query(50, ge=1, l
                 "works": work_hits or [{"composer": w.get("composer"), "title": w.get("title")} for w in e.get("works", [])],
             })
             if len(results) >= limit:
-                return {"query": q, "count": len(results), "items": results}
-    return {"query": q, "count": len(results), "items": results}
+                return sanitize_for_app({"query": q, "count": len(results), "items": results})
+    return sanitize_for_app({"query": q, "count": len(results), "items": results})

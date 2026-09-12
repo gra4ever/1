@@ -1,0 +1,1 @@
+Screenshot fixes: system insets, persistent Orchestră/TMC switch, functional week accordion, full string-section labels.

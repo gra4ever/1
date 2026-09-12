@@ -160,6 +160,19 @@ def month_meta(header, table_index):
     return month_num, month_name, year
 
 
+def classify_event(raw_date, raw_conductor, raw_program):
+    """TMC is a festival marker, not a display category.
+
+    TMC rows with a conductor are orchestral concerts and belong in Orchestră.
+    TMC rows without conductor stay in Recitaluri. Non-TMC rows are orchestral.
+    """
+    if "tmc" not in key_text(raw_date):
+        return "orchestra"
+    if clean_text(raw_conductor):
+        return "orchestra"
+    return "recital"
+
+
 def parse_date_cell(raw, month_num, year, event_type):
     raw = clean_text(raw)
     lines = raw.splitlines()
@@ -448,7 +461,7 @@ def week_info(iso_date):
 def parse_event(row, month_num, month_name, year, same_date_occurrence):
     cells = (row.get("cells") or []) + ["", "", "", ""]
     raw_date, raw_conductor, raw_soloist, raw_program = [clean_text(x) for x in cells[:4]]
-    event_type = "tmc" if "tmc" in key_text(raw_date) else "orchestra"
+    event_type = classify_event(raw_date, raw_conductor, raw_program)
     date_info = parse_date_cell(raw_date, month_num, year, event_type)
     conductor = parse_conductor(raw_conductor)
     soloists = parse_soloists(raw_soloist)
@@ -527,14 +540,17 @@ def parse_program(raw_doc):
         for row in rows[1:]:
             cells = row.get("cells") or []
             raw_date = clean_text(cells[0] if cells else "")
+            raw_conductor = clean_text(cells[1] if len(cells) > 1 else "")
+            raw_program = clean_text(cells[3] if len(cells) > 3 else "")
+            event_type = classify_event(raw_date, raw_conductor, raw_program)
             first = raw_date.splitlines()[0] if raw_date else "undated"
-            occ_key = key_text(first) + "|" + ("tmc" if "tmc" in key_text(raw_date) else "orchestra")
+            occ_key = key_text(first) + "|" + event_type
             occurrence[occ_key] = occurrence.get(occ_key, 0) + 1
             ev = parse_event(row, month_num, month_name, year, occurrence[occ_key])
             events.append(ev)
             all_events.append(ev)
         orchestra = [e for e in events if e["type"] == "orchestra"]
-        tmc = [e for e in events if e["type"] == "tmc"]
+        recitals = [e for e in events if e["type"] == "recital"]
         weeks_map = {}
         undated = []
         for e in orchestra:
@@ -568,6 +584,6 @@ def parse_program(raw_doc):
             "year": year,
             "label": f"{month_name.upper()} {year}",
             "weeks": weeks,
-            "tmc_recitals": tmc,
+            "tmc_recitals": recitals,
         })
     return {"title": title, "season": "2026/2027", "months": months, "event_count": len(all_events)}

@@ -55,6 +55,30 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(s["display"], "Vioara I - 10 • Vioara II - 8 • Viola - 6")
         self.assertEqual(e["rehearsals"][0]["lines"][0]["display"], "10:00–14:00")
 
+    def test_tmc_with_conductor_is_orchestra(self):
+        p = parse_program(self.fixture(
+            "9\nTMC",
+            "Gregory Vajda",
+            "Gary Hoffman violoncel",
+            "Antonín Dvořák - Concertul pentru violoncel"
+        ))
+        month = p["months"][0]
+        self.assertEqual(len(month["weeks"]), 1)
+        self.assertEqual(len(month["tmc_recitals"]), 0)
+        self.assertEqual(month["weeks"][0]["events"][0]["type"], "orchestra")
+
+    def test_tmc_without_conductor_is_recital(self):
+        p = parse_program(self.fixture(
+            "13\nTMC",
+            "",
+            "Beatrice Gagiu vioară",
+            "György Ligeti – Trio-ul pentru vioară, corn și pian"
+        ))
+        month = p["months"][0]
+        self.assertEqual(len(month["weeks"]), 0)
+        self.assertEqual(len(month["tmc_recitals"]), 1)
+        self.assertEqual(month["tmc_recitals"][0]["type"], "recital")
+
 
 if __name__ == "__main__":
     unittest.main()

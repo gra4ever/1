@@ -10,8 +10,8 @@ android {
         applicationId 'ro.filarmonica.transilvania.stagiune'
         minSdk 24
         targetSdk 35
-        versionCode 11
-        versionName '0.11.0'
+        versionCode 12
+        versionName '0.12.0'
     }
 
     buildTypes {
@@ -25,7 +25,6 @@ android {
     }
 }
 
-// v0.11: large readable cards, true two-line header, centered/discreet month picker.
 tasks.withType(JavaCompile).configureEach {
     doFirst {
         def f = file('src/main/java/ro/filarmonica/transilvania/stagiune/FinalMainActivity.java')
@@ -33,66 +32,71 @@ tasks.withType(JavaCompile).configureEach {
         def x = f.getText('UTF-8')
 
         x = x.replace('import android.app.Activity;\n', 'import android.app.Activity;\nimport android.app.AlertDialog;\n')
+        x = x.replace('import android.view.Gravity;\n', 'import android.view.Gravity;\nimport android.util.TypedValue;\n')
 
-        // HEADER — reserve almost all width for the two-line title.
-        x = x.replace('TextView title = tv("Filarmonica\\nTransilvania", 29, NAVY, true);',
-                      'TextView title = tv("Filarmonica\\nTransilvania", 22.5f, NAVY, true);')
+        // Header: title is fixed to exactly two lines even when Android font size is enlarged.
+        x = x.replace('TextView title = tv("Filarmonica\\nTransilvania", 29, NAVY, true);', '''TextView title = tv("Filarmonica\\nTransilvania", 24f, NAVY, true);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 24f);
+        title.setMaxLines(2);''')
         x = x.replace('TextView updated = tv("Actualizat " + syncTime, 10.8f, NAVY, false);',
-                      'TextView updated = tv("Actualizat " + syncTime, 9.2f, NAVY, false);')
+                      'TextView updated = tv("Actualizat " + syncTime, 8.8f, NAVY, false);')
         x = x.replace('TextView refresh = tv("↻  Actualizează", 11.2f, GOLD, true);',
-                      'TextView refresh = tv("↻  Actualizează", 8.6f, GOLD, false);')
+                      'TextView refresh = tv("↻  Actualizează", 8.0f, GOLD, false);')
         x = x.replace('LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(dp(122), dp(40));',
-                      'LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(dp(80), dp(28));')
-        x = x.replace('rp.setMargins(0, dp(7), 0, 0);', 'rp.setMargins(0, dp(4), 0, 0);')
+                      'LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(dp(78), dp(27));')
+        x = x.replace('rp.setMargins(0, dp(7), 0, 0);', 'rp.setMargins(0, dp(3), 0, 0);')
         x = x.replace('row.addView(right, new LinearLayout.LayoutParams(dp(126), -2));',
-                      'row.addView(right, new LinearLayout.LayoutParams(dp(84), -2));')
+                      'row.addView(right, new LinearLayout.LayoutParams(dp(82), -2));')
         x = x.replace('content.addView(hero, new LinearLayout.LayoutParams(-1, dp(178)));',
-                      'content.addView(hero, new LinearLayout.LayoutParams(-1, dp(132)));')
+                      'content.addView(hero, new LinearLayout.LayoutParams(-1, dp(136)));')
 
-        // Bottom navigation stays large and easy to tap.
+        // Bottom bar remains large.
         x = x.replace('root.addView(bottom, new LinearLayout.LayoutParams(-1, dp(62)));',
                       'root.addView(bottom, new LinearLayout.LayoutParams(-1, dp(76)));')
         x = x.replace('TextView b = tv(label, 11.5f, selected ? BLUE : MUTED, selected);',
                       'TextView b = tv(label, 13.5f, selected ? BLUE : MUTED, selected);')
 
-        // Month selector: centered and quieter. Dropdown entries are centered too.
+        // Month selector: centered, smaller and discreet. Dropdown months centered as well.
         x = x.replace('TextView selector=tv(label+(monthDropdownOpen?"  ⌃":"  ⌄"),17.5f,NAVY,true);',
-                      'TextView selector=tv(label+(monthDropdownOpen?"  ⌃":"  ⌄"),13.8f,NAVY,false);')
+                      'TextView selector=tv(label+(monthDropdownOpen?"  ⌃":"  ⌄"),13.0f,NAVY,false);')
         x = x.replace('LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(54));',
-                      'LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(44));')
+                      'LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(43));')
         x = x.replace('TextView r=tv(monthDisplayLabel(m),14.5f,i==selectedMonthIndex?NAVY:MUTED,i==selectedMonthIndex);',
-                      'TextView r=tv(monthDisplayLabel(m),13.8f,i==selectedMonthIndex?BLUE:MUTED,false);')
+                      'TextView r=tv(monthDisplayLabel(m),13.2f,i==selectedMonthIndex?GOLD:MUTED,false);')
         x = x.replace('r.setGravity(Gravity.CENTER_VERTICAL);', 'r.setGravity(Gravity.CENTER);')
 
-        // Use nearly the entire screen width.
-        x = x.replace('p.setMargins(dp(14),dp(2),dp(14),dp(9));', 'p.setMargins(dp(4),dp(2),dp(4),dp(6));')
-        x = x.replace('p.setMargins(dp(14),0,dp(14),dp(10));', 'p.setMargins(dp(4),0,dp(4),dp(7));')
-        x = x.replace('dpv.setMargins(dp(14),0,dp(14),dp(5));', 'dpv.setMargins(dp(4),0,dp(4),dp(4));')
-        x = x.replace('cp.setMargins(dp(14),0,dp(14),dp(12));', 'cp.setMargins(dp(4),0,dp(4),dp(8));')
+        // Nearly edge-to-edge cards.
+        x = x.replace('p.setMargins(dp(14),dp(2),dp(14),dp(9));', 'p.setMargins(dp(3),dp(2),dp(3),dp(6));')
+        x = x.replace('p.setMargins(dp(14),0,dp(14),dp(10));', 'p.setMargins(dp(3),0,dp(3),dp(7));')
+        x = x.replace('dpv.setMargins(dp(14),0,dp(14),dp(5));', 'dpv.setMargins(dp(3),0,dp(3),dp(4));')
+        x = x.replace('cp.setMargins(dp(14),0,dp(14),dp(12));', 'cp.setMargins(dp(3),0,dp(3),dp(8));')
         x = x.replace('pad(details,8,8,8,10);', 'pad(details,0,7,0,9);')
         x = x.replace('top.addView(meta,new LinearLayout.LayoutParams(dp(88),-2));',
-                      'top.addView(meta,new LinearLayout.LayoutParams(dp(62),-2));')
+                      'top.addView(meta,new LinearLayout.LayoutParams(dp(60),-2));')
 
-        // Main concert card readability.
+        // Main card readability.
         x = x.replace('TextView c=tv(cn,19,NAVY,true);', 'TextView c=tv(cn,20.5f,NAVY,true);')
-        x = x.replace('TextView t=tv("",12.7f,NAVY,false);', 'TextView t=tv("",14.0f,NAVY,false);')
+        x = x.replace('TextView t=tv("",12.7f,NAVY,false);', 'TextView t=tv("",14.2f,NAVY,false);')
         x = x.replace('if(!line.isEmpty()) info.addView(tv(line,12.3f,NAVY,false));',
-                      'if(!line.isEmpty()) info.addView(tv(line,13.8f,NAVY,false));')
-        x = x.replace('TextView tm=tv(time,13.5f,NAVY,false);', 'TextView tm=tv(time,14.0f,NAVY,false);')
+                      'if(!line.isEmpty()) info.addView(tv(line,14.0f,NAVY,false));')
+        x = x.replace('TextView tm=tv(time,13.5f,NAVY,false);', 'TextView tm=tv(time,14.2f,NAVY,false);')
 
-        // Expanded works: bigger type and full width.
+        // Expanded works: full width and clearly larger text.
         x = x.replace('pad(box,12,10,12,9);', 'pad(box,8,10,8,9);')
         x = x.replace('TextView head=tv("Programul lucrărilor",14.5f,GOLD,true);',
-                      'TextView head=tv("Programul lucrărilor",16.2f,GOLD,true);')
+                      'TextView head=tv("Programul lucrărilor",16.5f,GOLD,true);')
         x = x.replace('TextView title=tv(workLine(w),12.2f,NAVY,true);',
-                      'TextView title=tv(workLine(w),14.2f,NAVY,true);')
-        x = x.replace('tv(lab,10.4f,MUTED,true)', 'tv(lab,13.0f,MUTED,true)')
-        x = x.replace('tv(disp,10.4f,MUTED,false)', 'tv(disp,13.2f,MUTED,false)')
-        x = x.replace('tv(x,10.4f,MUTED,false)', 'tv(x,13.2f,MUTED,false)')
-        x = x.replace('tv(dist,10.4f,MUTED,false)', 'tv(dist,13.2f,MUTED,false)')
-        x = x.replace('tv(d,10.4f,MUTED,false)', 'tv(d,13.2f,MUTED,false)')
+                      'TextView title=tv(workLine(w),14.5f,NAVY,true);')
+        x = x.replace('tv(lab,10.4f,MUTED,true)', 'tv(lab,13.2f,MUTED,true)')
+        x = x.replace('tv(disp,10.4f,MUTED,false)', 'tv(disp,13.5f,MUTED,false)')
+        x = x.replace('tv(x,10.4f,MUTED,false)', 'tv(x,13.5f,MUTED,false)')
+        x = x.replace('tv(dist,10.4f,MUTED,false)', 'tv(dist,13.5f,MUTED,false)')
+        x = x.replace('tv(d,10.4f,MUTED,false)', 'tv(d,13.5f,MUTED,false)')
+        x = x.replace('parent.addView(box,new LinearLayout.LayoutParams(-1,-2));', '''LinearLayout.LayoutParams fullWidthWorks=new LinearLayout.LayoutParams(-1,-2);
+        fullWidthWorks.setMargins(0,0,0,0);
+        parent.addView(box,fullWidthWorks);''')
 
-        // Rehearsals: day close to times, one time block per row, larger text.
+        // Rehearsals: same width as works, larger, easy to read.
         def oldStart = x.indexOf('    private void renderScheduleSection(LinearLayout parent, JSONObject e) {')
         def oldEnd = x.indexOf('    private String join(List<String> xs,String sep) {', oldStart)
         if (oldStart >= 0 && oldEnd > oldStart) {
@@ -102,7 +106,7 @@ tasks.withType(JavaCompile).configureEach {
         LinearLayout box=vertical();
         box.setBackground(strokeBg(Color.WHITE,14,1,Color.rgb(231,228,220)));
         pad(box,8,10,8,8);
-        TextView head=tv("Repetiții:",16.2f,GOLD,true);
+        TextView head=tv("Repetiții:",16.5f,GOLD,true);
         head.setTypeface(Typeface.create(Typeface.SERIF,Typeface.BOLD));
         box.addView(head);
 
@@ -117,15 +121,15 @@ tasks.withType(JavaCompile).configureEach {
             LinearLayout dayRow=horizontal();
             dayRow.setGravity(Gravity.TOP);
             pad(dayRow,0,7,0,7);
-            dayRow.addView(tv(day,13.8f,NAVY,true),new LinearLayout.LayoutParams(dp(50),-2));
+            dayRow.addView(tv(day,14.2f,NAVY,true),new LinearLayout.LayoutParams(dp(48),-2));
 
             LinearLayout times=vertical();
             for(String[] item:rows) {
                 LinearLayout one=horizontal();
                 one.setGravity(Gravity.TOP);
-                TextView time=tv(item[0],13.4f,NAVY,false);
+                TextView time=tv(item[0],14.0f,NAVY,false);
                 one.addView(time,new LinearLayout.LayoutParams(dp(92),-2));
-                TextView desc=tv(item[1],13.4f,NAVY,false);
+                TextView desc=tv(item[1],14.0f,NAVY,false);
                 one.addView(desc,new LinearLayout.LayoutParams(0,-2,1));
                 times.addView(one);
             }
@@ -138,10 +142,10 @@ tasks.withType(JavaCompile).configureEach {
         p.setMargins(0,dp(7),0,0);
         parent.addView(box,p);
 
-        TextView original=tv("Arată original",8.2f,Color.rgb(144,121,82),false);
+        TextView original=tv("Arată original",8.0f,Color.rgb(144,121,82),false);
         original.setGravity(Gravity.END);
         pad(original,0,5,7,0);
-        original.setAlpha(.52f);
+        original.setAlpha(.45f);
         original.setOnClickListener(v->showOriginal(e));
         parent.addView(original,new LinearLayout.LayoutParams(-1,-2));
     }
@@ -206,7 +210,7 @@ tasks.withType(JavaCompile).configureEach {
             else text=raw.toString();
         }
         if(text==null||text.trim().isEmpty()) text="Nu există text original pentru acest concert.";
-        TextView body=tv(text,13.6f,NAVY,false);
+        TextView body=tv(text,14.0f,NAVY,false);
         body.setTextIsSelectable(true);
         pad(body,14,10,14,10);
         ScrollView sc=new ScrollView(this);

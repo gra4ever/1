@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run parser tests
         working-directory: filarmonica-backend
-        run: python -m unittest -v test_parser.py
+        run: python -m unittest -v test_parser.py test_parser_v04.py
       - name: Build linux/amd64 image
         run: docker build --platform linux/amd64 -f filarmonica-backend/Dockerfile.v04 -t stagiune-filarmonica-backend:0.4 ./filarmonica-backend
       - name: Save Docker image

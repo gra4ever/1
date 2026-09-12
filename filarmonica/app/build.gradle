@@ -10,8 +10,8 @@ android {
         applicationId 'ro.filarmonica.transilvania.stagiune'
         minSdk 24
         targetSdk 35
-        versionCode 8
-        versionName '0.8.0'
+        versionCode 9
+        versionName '0.9.0'
     }
 
     buildTypes {
@@ -26,85 +26,5 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-    }
-}
-
-// Small compile-time UI refinements for the approved v0.8 mock-up.
-tasks.withType(JavaCompile).configureEach {
-    doFirst {
-        def f = file('src/main/java/ro/filarmonica/transilvania/stagiune/FinalMainActivity.java')
-        if (f.exists()) {
-            def fixed = f.getText('UTF-8').replace('[:\\-–]', '[:–-]')
-
-            fixed = fixed.replace(
-                'import android.app.Activity;\n',
-                'import android.app.Activity;\nimport android.app.AlertDialog;\n'
-            )
-
-            // Bring Orchestră / Recitaluri closer to the title.
-            fixed = fixed.replace(
-                'content.addView(hero, new LinearLayout.LayoutParams(-1, dp(178)));',
-                'content.addView(hero, new LinearLayout.LayoutParams(-1, dp(148)));'
-            )
-
-            // Make the bottom navigation easier to tap and read.
-            fixed = fixed.replace(
-                'root.addView(bottom, new LinearLayout.LayoutParams(-1, dp(62)));',
-                'root.addView(bottom, new LinearLayout.LayoutParams(-1, dp(76)));'
-            )
-            fixed = fixed.replace(
-                'TextView b = tv(label, 11.5f, selected ? BLUE : MUTED, selected);',
-                'TextView b = tv(label, 13.5f, selected ? BLUE : MUTED, selected);'
-            )
-
-            // Expanded content uses the whole card width.
-            fixed = fixed.replace(
-                'pad(details,8,8,8,10);',
-                'pad(details,0,8,0,10);'
-            )
-
-            // Put a discreet “Arată original” link at the far right of the rehearsal row
-            // that contains the concert time.
-            fixed = fixed.replace(
-'''            LinearLayout row=horizontal(); row.setGravity(Gravity.TOP); pad(row,0,6,0,6);
-            row.addView(tv(day,11.4f,NAVY,true),new LinearLayout.LayoutParams(dp(94),-2));
-            row.addView(tv(text,10.7f,MUTED,false),new LinearLayout.LayoutParams(0,-2,1));
-            box.addView(row);''',
-'''            LinearLayout row=horizontal(); row.setGravity(Gravity.TOP); pad(row,0,6,0,6);
-            row.addView(tv(day,11.4f,NAVY,true),new LinearLayout.LayoutParams(dp(84),-2));
-            row.addView(tv(text,10.7f,MUTED,false),new LinearLayout.LayoutParams(0,-2,1));
-            if(norm(text).contains("concert")) {
-                TextView original=tv("Arată original",9.0f,GOLD,false);
-                original.setGravity(Gravity.END);
-                pad(original,6,0,0,0);
-                original.setOnClickListener(v->showOriginal(e));
-                row.addView(original,new LinearLayout.LayoutParams(dp(78),-2));
-            }
-            box.addView(row);'''
-            )
-
-            fixed = fixed.replace(
-'''    private String join(List<String> xs,String sep) {''',
-'''    private void showOriginal(JSONObject e) {
-        JSONObject raw=e==null?null:e.optJSONObject("raw");
-        String text=raw==null||raw.isNull("program")?"":raw.optString("program","");
-        if(text==null||text.trim().isEmpty()) text="Nu există text original pentru acest concert.";
-        TextView body=tv(text,12.2f,NAVY,false);
-        body.setTextIsSelectable(true);
-        pad(body,18,10,18,10);
-        ScrollView sc=new ScrollView(this);
-        sc.addView(body,new ScrollView.LayoutParams(-1,-2));
-        new AlertDialog.Builder(this)
-                .setTitle("Original")
-                .setView(sc)
-                .setPositiveButton("Închide",null)
-                .show();
-    }
-
-    private String join(List<String> xs,String sep) {'''
-            )
-
-            f.write(fixed, 'UTF-8')
-        }
     }
 }

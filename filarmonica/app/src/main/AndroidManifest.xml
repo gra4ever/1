@@ -9,7 +9,7 @@
         android:label="Stagiune Filarmonica Transilvania"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".FinalMainActivity"
+            android:name=".FinalMainActivityV08"
             android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>

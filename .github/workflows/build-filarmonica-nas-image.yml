@@ -1,0 +1,29 @@
+name: Build Filarmonica NAS Docker Image
+
+on:
+  push:
+    branches: [filarmonica-nas-image]
+    paths:
+      - 'filarmonica-backend/**'
+      - '.github/workflows/build-filarmonica-nas-image.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build linux/amd64 image
+        run: docker build --platform linux/amd64 -t stagiune-filarmonica-backend:0.1 ./filarmonica-backend
+      - name: Save Docker image
+        run: docker save -o stagiune-filarmonica-backend-amd64.tar stagiune-filarmonica-backend:0.1
+      - name: Show image info
+        run: |
+          ls -lh stagiune-filarmonica-backend-amd64.tar
+          docker image inspect stagiune-filarmonica-backend:0.1 --format '{{.Os}}/{{.Architecture}}'
+      - name: Upload image tar
+        uses: actions/upload-artifact@v4
+        with:
+          name: stagiune-filarmonica-backend-amd64
+          path: stagiune-filarmonica-backend-amd64.tar
+          if-no-files-found: error

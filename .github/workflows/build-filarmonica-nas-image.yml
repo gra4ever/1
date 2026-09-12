@@ -17,16 +17,16 @@ jobs:
         working-directory: filarmonica-backend
         run: python -m unittest -v test_parser.py
       - name: Build linux/amd64 image
-        run: docker build --platform linux/amd64 -t stagiune-filarmonica-backend:0.3 ./filarmonica-backend
+        run: docker build --platform linux/amd64 -f filarmonica-backend/Dockerfile.v04 -t stagiune-filarmonica-backend:0.4 ./filarmonica-backend
       - name: Save Docker image
-        run: docker save -o stagiune-filarmonica-backend-v0.3-amd64.tar stagiune-filarmonica-backend:0.3
+        run: docker save -o stagiune-filarmonica-backend-v0.4-amd64.tar stagiune-filarmonica-backend:0.4
       - name: Show image info
         run: |
-          ls -lh stagiune-filarmonica-backend-v0.3-amd64.tar
-          docker image inspect stagiune-filarmonica-backend:0.3 --format '{{.Os}}/{{.Architecture}}'
+          ls -lh stagiune-filarmonica-backend-v0.4-amd64.tar
+          docker image inspect stagiune-filarmonica-backend:0.4 --format '{{.Os}}/{{.Architecture}}'
       - name: Upload image tar
         uses: actions/upload-artifact@v4
         with:
-          name: stagiune-filarmonica-backend-v0.3-amd64
-          path: stagiune-filarmonica-backend-v0.3-amd64.tar
+          name: stagiune-filarmonica-backend-v0.4-amd64
+          path: stagiune-filarmonica-backend-v0.4-amd64.tar
           if-no-files-found: error

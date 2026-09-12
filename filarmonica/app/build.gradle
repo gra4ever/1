@@ -10,8 +10,8 @@ android {
         applicationId 'ro.filarmonica.transilvania.stagiune'
         minSdk 24
         targetSdk 35
-        versionCode 9
-        versionName '0.9.0'
+        versionCode 10
+        versionName '0.10.0'
     }
 
     buildTypes {
@@ -26,5 +26,194 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// Final readability refinements are applied at build time to keep the Java source easy to diff.
+tasks.withType(JavaCompile).configureEach {
+    doFirst {
+        def f = file('src/main/java/ro/filarmonica/transilvania/stagiune/FinalMainActivity.java')
+        if (!f.exists()) return
+        def x = f.getText('UTF-8')
+
+        // Needed by the very discreet "Arată original" link.
+        x = x.replace('import android.app.Activity;\n', 'import android.app.Activity;\nimport android.app.AlertDialog;\n')
+
+        // Header: always visually two lines, less empty space, update control much more discreet.
+        x = x.replace('TextView title = tv("Filarmonica\\nTransilvania", 29, NAVY, true);',
+                      'TextView title = tv("Filarmonica\\nTransilvania", 25.5f, NAVY, true);')
+        x = x.replace('TextView refresh = tv("↻  Actualizează", 11.2f, GOLD, true);',
+                      'TextView refresh = tv("↻  Actualizează", 9.4f, GOLD, false);')
+        x = x.replace('LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(dp(122), dp(40));',
+                      'LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(dp(104), dp(32));')
+        x = x.replace('rp.setMargins(0, dp(7), 0, 0);', 'rp.setMargins(0, dp(5), 0, 0);')
+        x = x.replace('row.addView(right, new LinearLayout.LayoutParams(dp(126), -2));',
+                      'row.addView(right, new LinearLayout.LayoutParams(dp(108), -2));')
+        x = x.replace('content.addView(hero, new LinearLayout.LayoutParams(-1, dp(178)));',
+                      'content.addView(hero, new LinearLayout.LayoutParams(-1, dp(148)));')
+
+        // Larger, easier bottom navigation.
+        x = x.replace('root.addView(bottom, new LinearLayout.LayoutParams(-1, dp(62)));',
+                      'root.addView(bottom, new LinearLayout.LayoutParams(-1, dp(76)));')
+        x = x.replace('TextView b = tv(label, 11.5f, selected ? BLUE : MUTED, selected);',
+                      'TextView b = tv(label, 13.5f, selected ? BLUE : MUTED, selected);')
+
+        // Month selector: same shape, slightly smaller label.
+        x = x.replace('TextView selector=tv(label+(monthDropdownOpen?"  ⌃":"  ⌄"),17.5f,NAVY,true);',
+                      'TextView selector=tv(label+(monthDropdownOpen?"  ⌃":"  ⌄"),15.2f,NAVY,true);')
+        x = x.replace('LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(54));',
+                      'LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(48));')
+
+        // Use almost the whole phone width everywhere that matters.
+        x = x.replace('p.setMargins(dp(14),dp(2),dp(14),dp(9));', 'p.setMargins(dp(6),dp(2),dp(6),dp(7));')
+        x = x.replace('p.setMargins(dp(14),0,dp(14),dp(10));', 'p.setMargins(dp(6),0,dp(6),dp(8));')
+        x = x.replace('dpv.setMargins(dp(14),0,dp(14),dp(5));', 'dpv.setMargins(dp(6),0,dp(6),dp(4));')
+        x = x.replace('cp.setMargins(dp(14),0,dp(14),dp(12));', 'cp.setMargins(dp(6),0,dp(6),dp(10));')
+        x = x.replace('pad(details,8,8,8,10);', 'pad(details,0,8,0,10);')
+        x = x.replace('top.addView(meta,new LinearLayout.LayoutParams(dp(88),-2));',
+                      'top.addView(meta,new LinearLayout.LayoutParams(dp(70),-2));')
+
+        // Slightly bigger concert text now that cards are wider.
+        x = x.replace('TextView t=tv("",12.7f,NAVY,false);', 'TextView t=tv("",13.2f,NAVY,false);')
+        x = x.replace('if(!line.isEmpty()) info.addView(tv(line,12.3f,NAVY,false));',
+                      'if(!line.isEmpty()) info.addView(tv(line,12.8f,NAVY,false));')
+        x = x.replace('TextView title=tv(workLine(w),12.2f,NAVY,true);',
+                      'TextView title=tv(workLine(w),13.0f,NAVY,true);')
+        x = x.replace('tv(disp,10.4f,MUTED,false)', 'tv(disp,11.2f,MUTED,false)')
+        x = x.replace('tv(x,10.4f,MUTED,false)', 'tv(x,11.2f,MUTED,false)')
+        x = x.replace('tv(dist,10.4f,MUTED,false)', 'tv(dist,11.2f,MUTED,false)')
+        x = x.replace('tv(d,10.4f,MUTED,false)', 'tv(d,11.2f,MUTED,false)')
+
+        // Replace the rehearsal renderer: day is closer to the hours, each actual block is its own row.
+        def oldStart = x.indexOf('    private void renderScheduleSection(LinearLayout parent, JSONObject e) {')
+        def oldEnd = x.indexOf('    private String join(List<String> xs,String sep) {', oldStart)
+        if (oldStart >= 0 && oldEnd > oldStart) {
+            def replacement = '''    private void renderScheduleSection(LinearLayout parent, JSONObject e) {
+        JSONArray reps=e.optJSONArray("rehearsals");
+        if(reps==null||reps.length()==0) return;
+        LinearLayout box=vertical();
+        box.setBackground(strokeBg(Color.WHITE,14,1,Color.rgb(231,228,220)));
+        pad(box,12,10,12,8);
+        TextView head=tv("Repetiții:",15.2f,GOLD,true);
+        head.setTypeface(Typeface.create(Typeface.SERIF,Typeface.BOLD));
+        box.addView(head);
+
+        for(int i=0;i<reps.length();i++) {
+            JSONObject r=reps.optJSONObject(i);
+            if(r==null) continue;
+            String day=s(r,"day"),ann=s(r,"annotation");
+            if(!ann.isEmpty()) day += (day.isEmpty()?"":" ")+ann;
+            List<String[]> rows=scheduleRows(r);
+            if(day.isEmpty()&&rows.isEmpty()) continue;
+
+            LinearLayout dayRow=horizontal();
+            dayRow.setGravity(Gravity.TOP);
+            pad(dayRow,0,6,0,6);
+            dayRow.addView(tv(day,12.4f,NAVY,true),new LinearLayout.LayoutParams(dp(64),-2));
+
+            LinearLayout times=vertical();
+            for(String[] item:rows) {
+                LinearLayout one=horizontal();
+                one.setGravity(Gravity.TOP);
+                TextView time=tv(item[0],12.0f,NAVY,false);
+                one.addView(time,new LinearLayout.LayoutParams(dp(104),-2));
+                TextView desc=tv(item[1],12.0f,NAVY,false);
+                one.addView(desc,new LinearLayout.LayoutParams(0,-2,1));
+                times.addView(one);
+            }
+            dayRow.addView(times,new LinearLayout.LayoutParams(0,-2,1));
+            box.addView(dayRow);
+            if(i<reps.length()-1) box.addView(rule());
+        }
+
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);
+        p.setMargins(0,dp(8),0,0);
+        parent.addView(box,p);
+
+        TextView original=tv("Arată original",9.2f,Color.rgb(154,122,70),false);
+        original.setGravity(Gravity.END);
+        pad(original,0,7,6,1);
+        original.setAlpha(.78f);
+        original.setOnClickListener(v->showOriginal(e));
+        parent.addView(original,new LinearLayout.LayoutParams(-1,-2));
+    }
+
+    private List<String[]> scheduleRows(JSONObject r) {
+        List<String[]> out=new ArrayList<>();
+        JSONArray lines=r.optJSONArray("lines");
+        String pending="";
+        if(lines!=null) {
+            for(int j=0;j<lines.length();j++) {
+                JSONObject l=lines.optJSONObject(j);
+                String display=normalizeConcertLabel(s(l,"display"));
+                if(display.isEmpty()) continue;
+                String[] parts=display.split("\\\\s*\\\\|\\\\s*");
+                for(String raw:parts) {
+                    String part=raw.trim();
+                    if(part.isEmpty()) continue;
+                    String low=norm(part);
+                    if(low.startsWith("concert ")) {
+                        String t=part.substring(part.indexOf(' ')+1).trim();
+                        out.add(new String[]{t,"Concert"});
+                        continue;
+                    }
+                    if(startsWithTime(part)) {
+                        int sp=part.indexOf(' ');
+                        String time=sp>0?part.substring(0,sp).trim():part;
+                        String desc=sp>0?part.substring(sp+1).trim():"";
+                        if(!pending.isEmpty()) {
+                            desc=pending+(desc.isEmpty()?"":"  "+desc);
+                            pending="";
+                        }
+                        if(norm(desc).equals("concert")) desc="Concert";
+                        out.add(new String[]{time,desc});
+                    } else if(low.equals("liber")||low.equals("anulat")||low.startsWith("anulat ")) {
+                        out.add(new String[]{"",part});
+                    } else {
+                        pending=part;
+                    }
+                }
+            }
+        }
+        if(!pending.isEmpty()) out.add(new String[]{"",pending});
+        return out;
+    }
+
+    private boolean startsWithTime(String x) {
+        if(x==null||x.length()<4||!Character.isDigit(x.charAt(0))) return false;
+        return x.contains(":")&&(x.contains("–")||x.contains("-"));
+    }
+
+    private String normalizeConcertLabel(String x) {
+        if(x==null) return "";
+        return x.replaceAll("(?iu)\\\\bconcert\\\\b","Concert");
+    }
+
+    private void showOriginal(JSONObject e) {
+        JSONObject raw=e==null?null:e.optJSONObject("raw");
+        String text="";
+        if(raw!=null) {
+            String p=s(raw,"program");
+            if(!p.isEmpty()) text=p;
+            else text=raw.toString();
+        }
+        if(text==null||text.trim().isEmpty()) text="Nu există text original pentru acest concert.";
+        TextView body=tv(text,12.8f,NAVY,false);
+        body.setTextIsSelectable(true);
+        pad(body,16,10,16,10);
+        ScrollView sc=new ScrollView(this);
+        sc.addView(body,new ScrollView.LayoutParams(-1,-2));
+        new AlertDialog.Builder(this)
+                .setTitle("Original")
+                .setView(sc)
+                .setPositiveButton("Închide",null)
+                .show();
+    }
+
+'''
+            x = x.substring(0, oldStart) + replacement + x.substring(oldEnd)
+        }
+
+        f.write(x, 'UTF-8')
     }
 }

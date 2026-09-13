@@ -3,20 +3,20 @@ from pathlib import Path
 src = Path('app/src/main/java/ro/filarmonica/transilvania/stagiune/FinalMainActivity.java')
 text = src.read_text(encoding='utf-8')
 
-old = '''                display=display.replaceAll("(?iu);\\s*concert\\s+", " | Concert ");\n                display=display.replaceAll("(?iu);\\s*(?=\\d{1,2}[:.])", " | ");'''
-new = '''                // Concert must always be displayed on its own row. The source may use\n                // either comma or semicolon before the word Concert.\n                display=display.replaceAll("(?iu)[,;]\\s*concert\\s+", " | Concert ");\n                display=display.replaceAll("(?iu);\\s*(?=\\d{1,2}[:.])", " | ");'''
+lines = text.splitlines()
+changed = 0
+for i, line in enumerate(lines):
+    if 'display=display.replaceAll' in line and 'concert' in line.lower() and '(?iu);' in line:
+        lines[i] = line.replace('(?iu);', '(?iu)[,;]', 1)
+        changed += 1
 
-if text.count(old) != 1:
-    raise SystemExit(f'v0.20 patch failed: concert separator marker count={text.count(old)}')
-text = text.replace(old, new, 1)
+if changed != 1:
+    raise SystemExit(f'v0.20 patch failed: expected one concert separator line, changed={changed}')
 
-checks = [
-    'display=display.replaceAll("(?iu)[,;]\\\\s*concert\\\\s+", " | Concert ")',
-    'Concert must always be displayed on its own row',
-]
-for check in checks:
-    if check not in text:
-        raise SystemExit(f'v0.20 verification failed: {check}')
+text = '\n'.join(lines) + ('\n' if text.endswith('\n') else '')
+
+if '(?iu)[,;]' not in text or 'concert' not in text.lower():
+    raise SystemExit('v0.20 verification failed: comma/semicolon concert splitter missing')
 
 src.write_text(text, encoding='utf-8')
 

@@ -59,6 +59,9 @@ jobs:
       - name: Apply v0.23 protected API and approval flow
         working-directory: filarmonica
         run: python3 prepare_v023.py
+      - name: Clean v0.23 generated Java
+        working-directory: filarmonica
+        run: python3 fix_v023_java.py
       - name: Build debug APK
         working-directory: filarmonica
         run: gradle :app:clean :app:assembleDebug --stacktrace

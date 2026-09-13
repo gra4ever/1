@@ -34,12 +34,15 @@ jobs:
       - name: Apply v0.18 readability fixes
         working-directory: filarmonica
         run: python3 prepare_v018.py
+      - name: Apply v0.19 concert-row fix
+        working-directory: filarmonica
+        run: python3 prepare_v019.py
       - name: Build debug APK
         working-directory: filarmonica
         run: gradle :app:clean :app:assembleDebug --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Stagiune-Filarmonica-Transilvania-v0.18-debug
+          name: Stagiune-Filarmonica-Transilvania-v0.19-debug
           path: filarmonica/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

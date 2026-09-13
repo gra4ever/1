@@ -24,7 +24,7 @@ req(
 req('        final int outer=14;', '        final int outer=10;', 'wider event cards')
 req(
     '        dateBar.setBackground(bg(Color.rgb(116,132,155),18));',
-    '        dateBar.setBackground(bg(NAVY_2,18));',
+    '        dateBar.setBackground(bg(BLUE,18));',
     'solid date bar color'
 )
 req('        pad(top,14,11,10,11);', '        pad(top,12,11,6,11);', 'smaller inner horizontal padding')
@@ -61,7 +61,7 @@ text = text.replace(marker, helper + marker, 1)
 # Strong verification: fail instead of silently producing the old UI.
 checks = [
     'final int outer=10',
-    'dateBar.setBackground(bg(NAVY_2,18))',
+    'dateBar.setBackground(bg(BLUE,18))',
     'new LinearLayout.LayoutParams(dp(68),-2)',
     'workView.setTextScaleX(.96f)',
     'replaceAll("(?iu)violoncel", "Cello")',

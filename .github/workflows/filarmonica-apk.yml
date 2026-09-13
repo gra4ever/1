@@ -48,7 +48,7 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable-nodpi
           base64 -d ic_launcher_v21.jpg.b64 > app/src/main/res/drawable-nodpi/ic_launcher_v21.jpg
-          test "$(sha256sum app/src/main/res/drawable-nodpi/ic_launcher_v21.jpg | awk '{print $1}')" = "1d2e3ba3ceed003337295559ac04fce8b6e51e9079938ac5f8b352b23865a183"
+          test "$(sha256sum app/src/main/res/drawable-nodpi/ic_launcher_v21.jpg | awk '{print $1}')" = "b10a8f270b01dc5019d9fb7f74546081c3c9c443fff84a4e952534833c9dddc2"
       - name: Build debug APK
         working-directory: filarmonica
         run: gradle :app:clean :app:assembleDebug --stacktrace

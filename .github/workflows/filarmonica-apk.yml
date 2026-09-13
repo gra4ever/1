@@ -53,6 +53,9 @@ jobs:
       - name: Apply v0.22 adaptive launcher icon and label
         working-directory: filarmonica
         run: python3 prepare_v022.py
+      - name: Fix v0.23 patch matcher
+        working-directory: filarmonica
+        run: python3 fix_prepare_v023.py
       - name: Apply v0.23 protected API and approval flow
         working-directory: filarmonica
         run: python3 prepare_v023.py

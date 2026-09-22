@@ -62,12 +62,15 @@ jobs:
       - name: Clean v0.23 generated Java
         working-directory: filarmonica
         run: python3 fix_v023_java.py
+      - name: Apply v0.24 Drive Activity timestamp UI
+        working-directory: filarmonica
+        run: python3 prepare_v024.py
       - name: Build debug APK
         working-directory: filarmonica
         run: gradle :app:clean :app:assembleDebug --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Stagiune-FST-v0.23-debug
+          name: Stagiune-FST-v0.24-debug
           path: filarmonica/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

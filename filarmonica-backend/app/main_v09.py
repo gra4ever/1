@@ -1,5 +1,7 @@
 import os
 
+from fastapi import Request
+
 from . import main_v08 as v8
 from .drive_activity import health as drive_activity_health
 from .drive_activity import latest_edit
@@ -136,7 +138,7 @@ base.refresh_snapshot = refresh_snapshot_v09
 
 
 @app.get("/admin/drive-activity-test")
-def admin_drive_activity_test(request: base.Request):
+def admin_drive_activity_test(request: Request):
     # Reuse v0.8 Cloudflare/admin authorization.
     v8.admin_guard(request)
     try:
